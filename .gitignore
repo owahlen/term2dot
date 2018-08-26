@@ -1,0 +1,7 @@
+.idea/
+calc
+*.dot
+*.o
+*.yy.c
+*.tab.c
+*.tab.hpp

@@ -1,0 +1,157 @@
+%{
+#include <cstdio>
+#include <cstdlib>
+#include <string>
+#include <initializer_list>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <math.h>
+#include <map>
+
+using namespace std;
+
+extern void unknownFunctionError(string s);
+extern void div0Error(void);
+extern int yylex();
+extern int yyparse();
+extern FILE *yyin;
+extern void yyerror(const char *s);
+ofstream dot;
+
+class Node {
+  public:
+    Node(string label, double value)
+      :_id(Node::nextId++),_label(label),_value(value) {}
+    Node(string label, double value, Node *child)
+      :_id(Node::nextId++),_label(label),_value(value) { _children.push_back(child); }
+    Node(string label, double value, Node *child1, Node *child2)
+      :_id(Node::nextId++),_label(label),_value(value) { _children.push_back(child1); _children.push_back(child2); }
+    ~Node();
+    const string id() const;
+    const string label() const;
+    const double value() const;
+    const vector<Node*> children() const;
+    friend ostream &operator<<( ostream &output, const Node &n );
+  private:
+    static int nextId;
+    int _id;
+    string _label;
+    double _value;
+    vector<Node*> _children;
+
+};
+Node::~Node() {
+  for(vector<Node*>::iterator it = _children.begin(); it != _children.end(); ++it) {
+    Node *child = *it;
+    delete child;
+  }
+}
+int Node::nextId = 0;
+const string Node::id() const {
+  return string("n") + to_string(_id);
+}
+const string Node::label() const {
+  return _label;
+}
+const double Node::value() const {
+  return _value;
+}
+const vector<Node*> Node::children() const {
+  return _children;
+}
+Node *root;
+
+
+%}
+
+%union {
+double number;
+string *identifier;
+class Node *node;
+}
+
+%type <node> expression
+%token <identifier> IDENTIFIER
+%token <number> NUMBER
+%left '+' '-'
+%left "*" "/"
+
+%%
+
+line: expression '\n' { cout << setprecision(10) << $1->value() << "\n"; root = $1; YYACCEPT; }
+     ;
+
+
+expression: NUMBER              { $$ = new Node("", $1); }
+    | expression '+' expression { $$ = new Node("+", $1->value() + $3->value(), $1, $3); }
+    | expression '-' expression { $$ = new Node("-", $1->value() - $3->value(), $1, $3); }
+    | expression '*' expression { $$ = new Node("*", $1->value() * $3->value(), $1, $3); }
+    | expression '/' expression {
+                                  if($3->value()==0) { div0Error(); }
+                                  else { $$ = new Node("/", $1->value() / $3->value(), $1, $3); }
+                                }
+    | expression '^' expression { $$ = new Node("pow", pow($1->value(), $3->value()), $1, $3); }
+    | IDENTIFIER '(' expression ')' {
+                                  if(*$1=="sin")       $$ = new Node(*$1, sin($3->value()), $3);
+                                  else if(*$1=="cos")  $$ = new Node(*$1, cos($3->value()), $3);
+                                  else if(*$1=="tan")  $$ = new Node(*$1, tan($3->value()), $3);
+                                  else if(*$1=="asin") $$ = new Node(*$1, asin($3->value()), $3);
+                                  else if(*$1=="acos") $$ = new Node(*$1, acos($3->value()), $3);
+                                  else if(*$1=="atan") $$ = new Node(*$1, atan($3->value()), $3);
+                                  else if(*$1=="log")  $$ = new Node(*$1, log($3->value()), $3);
+                                  else if(*$1=="exp")  $$ = new Node(*$1, exp($3->value()), $3);
+                                  else if(*$1=="sqrt") $$ = new Node(*$1, sqrt($3->value()), $3);
+                                  else if(*$1=="abs")  $$ = new Node(*$1, abs($3->value()), $3);
+                                  else unknownFunctionError(*$1);
+                                }
+      | '-' expression        { $$ = new Node("-", -$2->value(), $2); }
+      | '(' expression ')'    { $$ = new Node("()", $2->value(), $2); }
+      ;
+
+%%
+
+int main()
+{
+    yyin = stdin;
+    dot.open("term.dot");
+    dot << setprecision(10);
+    dot << "digraph G {\n";
+    dot << "    node [shape=record,fontname=\"Arial\"];\n";
+    // parse exactly one line
+  	yyparse();
+  	dot << *root;
+  	dot << "}\n";
+  	dot.close();
+  	delete root;
+	return 0;
+}
+
+ostream& operator<<(ostream &os, const Node& n) {
+    os << "    " << n.id() << " [label=\"";
+    if(n.label().size()>0) os << "{" << n.label() << "|" << n.value() << "}";
+    else os << n.value();
+    os << "\"]\n";
+    for(vector<Node*>::const_iterator it = n.children().begin(); it != n.children().end(); ++it) {
+        const Node *child = *it;
+        os << "    " << n.id() << " -> " << child->id() << "\n";
+        os << *child;
+    }
+    return os;
+}
+
+void yyerror(const char *s) {
+	cerr << "Parse error: " << s << "\n";
+	exit(1);
+}
+
+void unknownFunctionError(string s) {
+    cerr << "Error: unknown function '" << s << "'\n";
+    exit(1);
+}
+
+void div0Error(void) {
+    cerr << "Error: division by zero\n";
+    exit(1);
+}
