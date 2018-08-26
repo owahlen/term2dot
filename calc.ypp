@@ -32,7 +32,7 @@ class Node {
     const string id() const;
     const string label() const;
     const double value() const;
-    const vector<Node*> children() const;
+    const vector<Node*> &children() const;
     friend ostream &operator<<( ostream &output, const Node &n );
   private:
     static int nextId;
@@ -58,7 +58,7 @@ const string Node::label() const {
 const double Node::value() const {
   return _value;
 }
-const vector<Node*> Node::children() const {
+const vector<Node*> &Node::children() const {
   return _children;
 }
 Node *root;
@@ -130,7 +130,7 @@ int main()
 
 ostream& operator<<(ostream &os, const Node& n) {
     os << "    " << n.id() << " [label=\"";
-    if(n.label().size()>0) os << "{" << n.label() << "|" << n.value() << "}";
+    if(n.label().length()>0) os << "{" << n.label() << "|" << n.value() << "}";
     else os << n.value();
     os << "\"]\n";
     for(vector<Node*>::const_iterator it = n.children().begin(); it != n.children().end(); ++it) {
