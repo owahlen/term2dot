@@ -31,10 +31,14 @@ $ make
 ```
 
 ## Usage
-When sending a mathematical term to this application via `stdin` the Graphviz file `term.dot` is created.
-Example:
+Call `calc` with a mathematical term as an argument in order to generate a Graphviz file.
+If no further arguments are given, the name of the output file is `term.dot`.
 ```
-$ echo "3-5*2" | ./calc
+$ ./calc "3-5*2"
+```
+In order to use a different file use the option `-o`:
+```
+$ ./calc -o my_term.dot "3-5*2"
 ```
 The resulting graph can be viewed with the `xdot` command:
 ```

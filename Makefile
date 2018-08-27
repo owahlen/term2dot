@@ -1,5 +1,5 @@
 CPP     = g++
-CFLAGS  =
+CFLAGS  = -std=c++11 -Wno-deprecated-register
 LDFLAGS =
 
 all: calc clean
@@ -20,4 +20,4 @@ clean:
 	rm -f *.o *.tab.cpp *.tab.hpp *.yy.cpp
 
 cleanest: clean
-	rm calc
+	rm -f calc *.dot

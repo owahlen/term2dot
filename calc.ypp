@@ -9,9 +9,13 @@
 #include <math.h>
 #include <map>
 #include "node.hpp"
+#include "cxxopts.hpp"
 
 extern void unknownFunctionError(std::string s);
 extern void div0Error(void);
+typedef struct yy_buffer_state *YY_BUFFER_STATE;
+extern YY_BUFFER_STATE yy_scan_string(const char *str);
+extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 extern int yylex();
 extern int yyparse();
 extern FILE *yyin;
@@ -37,7 +41,7 @@ class Node *node;
 
 %%
 
-line: expression '\n' { std::cout << std::setprecision(10) << $1->value() << "\n"; root = $1; YYACCEPT; }
+line: expression { std::cout << std::setprecision(10) << $1->value() << "\n"; root = $1; YYACCEPT; }
      ;
 
 
@@ -69,19 +73,60 @@ expression: NUMBER                  { $$ = new Node("", $1); }
 
 %%
 
-int main()
-{
-    yyin = stdin;
-    dot.open("term.dot");
-    dot << std::setprecision(10);
-    dot << "digraph G {\n";
-    dot << "    node [shape=record,fontname=\"Arial\"];\n";
-    // parse exactly one line
-  	yyparse();
-  	dot << *root;
-  	dot << "}\n";
-  	dot.close();
-  	delete root;
+int main(int argc, char* argv[]) {
+  std::string output;
+  std::string term;
+  try {
+    cxxopts::Options options(argv[0], "Translates a mathematical term into a Graphviz file");
+    options
+      .positional_help("mathematical term");
+
+    options
+      .add_options()
+
+      ("h,help", "Print help")
+
+      ("o,output", "Output file", cxxopts::value<std::string>()->default_value("term.dot"))
+
+      ("term", "mathematical term", cxxopts::value<std::string>());
+
+      options.parse_positional({"term"});
+      auto result = options.parse(argc, argv);
+
+      if (result.count("help")) {
+        std::cout << options.help({"", "Group"}) << std::endl;
+        exit(0);
+      }
+
+      output = result["output"].as<std::string>();
+
+      if(!result.count("term")) {
+        std::cerr << options.help({"", "Group"}) << std::endl;
+        exit(1);
+      }
+      term = result["term"].as<std::string>();
+
+  } catch (const cxxopts::OptionException& e) {
+    std::cerr << "Error parsing options: " << e.what() << std::endl;
+    exit(1);
+  }
+
+  // parse input into tree of nodes referenced by root
+  char *str = (char *) term.c_str();
+  YY_BUFFER_STATE buffer = yy_scan_string(str);
+  yyparse();
+  yy_delete_buffer(buffer);
+
+  // write tree of nodes into dot file
+  dot.open(output);
+  dot << std::setprecision(10);
+  dot << "digraph G {\n";
+  dot << "    node [shape=record,fontname=\"Arial\"];\n";
+  dot << *root;
+  dot << "}\n";
+  dot.close();
+  delete root;
+
 	return 0;
 }
 
@@ -99,7 +144,7 @@ std::ostream& operator<<(std::ostream &os, const Node& n) {
 }
 
 void yyerror(const char *s) {
-	std::cerr << "Parse error: " << s << "\n";
+	std::cerr << "Error in term: " << s << "\n";
 	exit(1);
 }
 
