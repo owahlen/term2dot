@@ -13,7 +13,7 @@ all: calc clean
 %.yy.cpp: %.l %.tab.h
 	flex -o $@ $<
 
-calc: calc.tab.o calc.yy.o
+calc: calc.tab.o calc.yy.o node.o
 	$(CPP) -o $@ $^ $(LDFLAGS)
 
 clean:

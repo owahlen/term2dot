@@ -22,6 +22,7 @@ Calculator that computes a mathematical term given as input and exports the expr
 * C++ Compiler (e.g. g++)
 * make utility (e.g. gmake)
 * graphviz
+* xdot (optional)
 
 ## Installation
 The `calc` application is built in the source code directory with the command:
@@ -35,7 +36,11 @@ Example:
 ```
 $ echo "3-5*2" | ./calc
 ```
-The resulting graph can be viewed for example with the `dotty` command from the Graphviz package:
+The resulting graph can be viewed with the `xdot` command:
 ```
-$ dotty term.dot
+$ xdot term.dot
+```
+Alternatively it can be converted into an image with the `dot` utility from the Graphviz package:
+```
+$ dot -Tpng term.dot -o term.png
 ```

@@ -2,73 +2,28 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
-#include <initializer_list>
 #include <vector>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 #include <math.h>
 #include <map>
+#include "node.hpp"
 
-using namespace std;
-
-extern void unknownFunctionError(string s);
+extern void unknownFunctionError(std::string s);
 extern void div0Error(void);
 extern int yylex();
 extern int yyparse();
 extern FILE *yyin;
 extern void yyerror(const char *s);
-ofstream dot;
-
-class Node {
-  public:
-    Node(string label, double value)
-      :_id(Node::nextId++),_label(label),_value(value) {}
-    Node(string label, double value, Node *child)
-      :_id(Node::nextId++),_label(label),_value(value) { _children.push_back(child); }
-    Node(string label, double value, Node *child1, Node *child2)
-      :_id(Node::nextId++),_label(label),_value(value) { _children.push_back(child1); _children.push_back(child2); }
-    ~Node();
-    const string id() const;
-    const string label() const;
-    const double value() const;
-    const vector<Node*> &children() const;
-    friend ostream &operator<<( ostream &output, const Node &n );
-  private:
-    static int nextId;
-    int _id;
-    string _label;
-    double _value;
-    vector<Node*> _children;
-
-};
-Node::~Node() {
-  for(vector<Node*>::iterator it = _children.begin(); it != _children.end(); ++it) {
-    Node *child = *it;
-    delete child;
-  }
-}
-int Node::nextId = 0;
-const string Node::id() const {
-  return string("n") + to_string(_id);
-}
-const string Node::label() const {
-  return _label;
-}
-const double Node::value() const {
-  return _value;
-}
-const vector<Node*> &Node::children() const {
-  return _children;
-}
+std::ofstream dot;
 Node *root;
-
 
 %}
 
 %union {
 double number;
-string *identifier;
+std::string *identifier;
 class Node *node;
 }
 
@@ -80,7 +35,7 @@ class Node *node;
 
 %%
 
-line: expression '\n' { cout << setprecision(10) << $1->value() << "\n"; root = $1; YYACCEPT; }
+line: expression '\n' { std::cout << std::setprecision(10) << $1->value() << "\n"; root = $1; YYACCEPT; }
      ;
 
 
@@ -116,7 +71,7 @@ int main()
 {
     yyin = stdin;
     dot.open("term.dot");
-    dot << setprecision(10);
+    dot << std::setprecision(10);
     dot << "digraph G {\n";
     dot << "    node [shape=record,fontname=\"Arial\"];\n";
     // parse exactly one line
@@ -128,12 +83,12 @@ int main()
 	return 0;
 }
 
-ostream& operator<<(ostream &os, const Node& n) {
+std::ostream& operator<<(std::ostream &os, const Node& n) {
     os << "    " << n.id() << " [label=\"";
     if(n.label().length()>0) os << "{" << n.label() << "|" << n.value() << "}";
     else os << n.value();
     os << "\"]\n";
-    for(vector<Node*>::const_iterator it = n.children().begin(); it != n.children().end(); ++it) {
+    for(std::vector<Node*>::const_iterator it = n.children().begin(); it != n.children().end(); ++it) {
         const Node *child = *it;
         os << "    " << n.id() << " -> " << child->id() << "\n";
         os << *child;
@@ -142,16 +97,16 @@ ostream& operator<<(ostream &os, const Node& n) {
 }
 
 void yyerror(const char *s) {
-	cerr << "Parse error: " << s << "\n";
+	std::cerr << "Parse error: " << s << "\n";
 	exit(1);
 }
 
-void unknownFunctionError(string s) {
-    cerr << "Error: unknown function '" << s << "'\n";
+void unknownFunctionError(std::string s) {
+    std::cerr << "Error: unknown function '" << s << "'\n";
     exit(1);
 }
 
 void div0Error(void) {
-    cerr << "Error: division by zero\n";
+    std::cerr << "Error: division by zero\n";
     exit(1);
 }
