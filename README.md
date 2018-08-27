@@ -44,3 +44,4 @@ Alternatively it can be converted into an image with the `dot` utility from the 
 ```
 $ dot -Tpng term.dot -o term.png
 ```
+![term](images/term.png)
